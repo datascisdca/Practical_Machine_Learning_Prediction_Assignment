@@ -1,0 +1,69 @@
+---
+title: "Coursera Practical Machine Learning: Prediction Assignment Writeup"
+author: "Michael Gao"
+date: "April 22, 2016"
+output: html_document
+---
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to answer these questions.
+
+The training data for this project are available here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. 
+
+## Cleaning Data
+
+Columns containing NA data were removed, along with the first seven columns.
+
+```{r}
+library(caret)
+library(randomForest)
+
+data_set_1 = read.csv('pml-training.csv',na.strings=c('','NA'))
+
+data_set_2 = data_set_1[,!apply(data_set_1,2,function(x) any(is.na(x)) )]
+
+data_set_3 = data_set_2[,-c(1:7)]
+```
+
+## Cross validation and predictive model
+
+For cross validation, We split the testing data into subgroups at a 60:40 ratio.
+
+```{r}
+subGroups = createDataPartition(y=data_set_3$classe, p=0.6, list=FALSE)
+
+subTraining = data_set_3[subGroups,]
+
+subTesting = data_set_3[-subGroups,]
+```
+
+Random forest paradigm was used to make a predictive model with the subTraining group. We then predict the outcome with the subTesting group, and examine the confusion matrix to verify the predictive model performance.
+
+```{r}
+model = randomForest(classe~., data=subTraining, method='class')
+
+pred  = predict(model, subTesting, type='class')
+
+confusionMatrix(pred, subTesting$classe)
+```
+
+## Testing Set Analysis and Predictions
+
+Moving on to the testing data set. 
+
+```{r}
+data_set_4 = read.csv('pml-testing.csv', na.strings=c('','NA'))
+
+data_set_5 = data_set_4[,!apply(data_set_4,2,function(x) any(is.na(x)) )]
+
+data_set_6 = data_set_5[,-c(1:7)]
+
+predicted=predict(model, data_set_6, type='class')
+
+predicted
+```
+
+These are the final results for the Course Project Prediction Quiz.
